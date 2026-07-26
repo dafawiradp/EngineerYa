@@ -1,0 +1,272 @@
+// EngineerYa — full schema through Phase 9.
+// Identity (User/RefreshToken), Catalog (Book/Category), Reading
+// (ReadingProgress/Bookmark/WatermarkToken), Commerce (Entitlement/
+// Purchase/Payment), and Membership.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  USER
+  EDITOR
+  ADMIN
+}
+
+enum BookStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum EntitlementType {
+  READ
+  DOWNLOAD
+}
+
+enum EntitlementSource {
+  PURCHASE
+  MEMBERSHIP
+  PROMO
+}
+
+enum PurchaseStatus {
+  PENDING
+  PAID
+  FAILED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  EXPIRED
+}
+
+model User {
+  id            String   @id @default(uuid())
+  email         String   @unique
+  name          String
+  // Null for users who only ever authenticated via OAuth.
+  passwordHash  String?
+  // "google" | null. Extend to an enum if more providers are added later.
+  oauthProvider String?
+  oauthId       String?
+  role          UserRole @default(USER)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  refreshTokens   RefreshToken[]
+  readingProgress ReadingProgress[]
+  bookmarks       Bookmark[]
+  watermarkTokens WatermarkToken[]
+  entitlements    Entitlement[]
+  purchases       Purchase[]
+  memberships     Membership[]
+
+  @@index([oauthProvider, oauthId])
+  @@map("users")
+}
+
+model RefreshToken {
+  id         String    @id @default(uuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // We store a hash of the token, never the raw token — a leaked DB row
+  // must not itself be a usable credential.
+  tokenHash  String    @unique
+  expiresAt  DateTime
+  revokedAt  DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+model Category {
+  id       String     @id @default(uuid())
+  name     String
+  slug     String     @unique
+  parentId String?
+  parent   Category?  @relation("CategoryToSubcategory", fields: [parentId], references: [id], onDelete: SetNull)
+  children Category[] @relation("CategoryToSubcategory")
+  books    Book[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([parentId])
+  @@map("categories")
+}
+
+model Book {
+  id           String     @id @default(uuid())
+  title        String
+  slug         String     @unique
+  description  String
+  authorNames  String[]
+  discipline   String
+  coverUrl     String
+  // Private object-storage key (Cloudflare R2). NEVER selected into any
+  // API response DTO — see BookRepository comment. Only the storage/
+  // reader modules (Phase 4+) read this field, via a dedicated narrow
+  // repository method that no controller ever touches.
+  fileKey      String
+  pageCount    Int        @default(0)
+  priceCents   Int
+  status       BookStatus @default(DRAFT)
+  publishedAt  DateTime?
+
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  readingProgress ReadingProgress[]
+  bookmarks       Bookmark[]
+  entitlements    Entitlement[]
+  purchases       Purchase[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([categoryId])
+  @@index([status, publishedAt])
+  @@map("books")
+}
+
+model ReadingProgress {
+  id             String   @id @default(uuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookId         String
+  book           Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  lastPage       Int      @default(1)
+  percentComplete Float   @default(0)
+  updatedAt      DateTime @updatedAt
+
+  @@unique([userId, bookId])
+  @@index([userId])
+  @@map("reading_progress")
+}
+
+model Bookmark {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookId    String
+  book      Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  page      Int
+  note      String?
+  createdAt DateTime @default(now())
+
+  @@index([userId, bookId])
+  @@map("bookmarks")
+}
+
+model WatermarkToken {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookId    String
+  page      Int
+  sessionId String
+  issuedAt  DateTime @default(now())
+
+  // Traceability record only — ties a specific rendered page delivery
+  // back to a user/session/timestamp, so a leaked page image can (in
+  // principle) be correlated back to who requested it. This is NOT an
+  // access-control check; entitlement is what gates access (Phase 8).
+  @@index([userId, bookId])
+  @@index([bookId, page])
+  @@map("watermark_tokens")
+}
+
+model Entitlement {
+  id         String            @id @default(uuid())
+  userId     String
+  user       User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookId     String
+  book       Book              @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  type       EntitlementType
+  source     EntitlementSource
+  grantedAt  DateTime          @default(now())
+
+  // A user can only have ONE entitlement of a given type per book — this
+  // is what makes granting idempotent (webhook retries, re-purchase
+  // attempts, etc. can all safely upsert against this constraint instead
+  // of accumulating duplicate rows).
+  @@unique([userId, bookId, type])
+  @@index([userId])
+  @@map("entitlements")
+}
+
+model Purchase {
+  id         String         @id @default(uuid())
+  userId     String
+  user       User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookId     String
+  book       Book           @relation(fields: [bookId], references: [id], onDelete: Restrict)
+  priceCents Int
+  status     PurchaseStatus @default(PENDING)
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+
+  payment Payment?
+
+  @@index([userId, status])
+  @@map("purchases")
+}
+
+model Payment {
+  id          String        @id @default(uuid())
+  purchaseId  String        @unique
+  purchase    Purchase      @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  provider    String        @default("midtrans")
+  providerRef String?
+  status      PaymentStatus @default(PENDING)
+  rawPayload  Json?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([providerRef])
+  @@map("payments")
+}
+
+model Membership {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan      String
+  // Lifecycle: PENDING (awaiting payment) -> ACTIVE (webhook confirmed) ->
+  // EXPIRED | CANCELLED. Defaults to PENDING to match how every row is
+  // actually created (see SubscribeMembershipUseCase) — defaulting to
+  // ACTIVE here would be a landmine for any future code path that
+  // creates a Membership row without explicitly setting status.
+  status    String   @default("PENDING")
+  startsAt  DateTime @default(now())
+  expiresAt DateTime
+
+  @@index([userId, status])
+  @@map("memberships")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  actorId    String?
+  action     String
+  targetType String
+  targetId   String?
+  metadata   Json?
+  ip         String?
+  createdAt  DateTime @default(now())
+
+  @@index([actorId])
+  @@index([targetType, targetId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}

@@ -1,0 +1,8 @@
+node_modules/
+.next/
+dist/
+build/
+.env
+*.log
+.DS_Store
+packages/database/prisma/migrations/**/migration.sql.bak

@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  lint-build-test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: engineerya
+          POSTGRES_PASSWORD: engineerya_dev_password
+          POSTGRES_DB: engineerya
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U engineerya"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npm run db:generate
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+
+      - name: Test
+        run: npm run test
+        env:
+          DATABASE_URL: postgresql://engineerya:engineerya_dev_password@localhost:5432/engineerya
+          REDIS_URL: redis://localhost:6379
+          MEILISEARCH_HOST: http://localhost:7700
+          MEILISEARCH_API_KEY: ci_key
+          JWT_ACCESS_SECRET: ci_access_secret_ci_access_secret
+          JWT_REFRESH_SECRET: ci_refresh_secret_ci_refresh_secret
