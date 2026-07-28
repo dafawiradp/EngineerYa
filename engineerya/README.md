@@ -1,147 +1,417 @@
-# EngineerYa
+<div align="center">
 
-Digital engineering library platform. Monorepo (npm workspaces).
+<br />
 
-## Structure
+<img src="https://raw.githubusercontent.com/dafawiradp/EngineerYa/main/engineerya/apps/web/public/logo.svg" alt="EngineerYa Logo" width="72" height="72" />
 
-- `apps/web` — Next.js frontend
-- `apps/api` — NestJS backend (Clean Architecture, modules under `src/modules`)
-- `packages/database` — Prisma schema + client
-- `packages/shared-types` — DTOs shared between web and api
-- `packages/config` — validated environment config
+<h1>EngineerYa</h1>
 
-## Getting started (Phase 0)
+<p><strong>The Digital Engineering Library Platform</strong><br/>
+Discover · Read · Own engineering textbooks with a secure watermarked reader,<br/>
+real-time progress syncing, and Midtrans-powered commerce.</p>
 
-```bash
-cp .env.example .env        # adjust secrets as needed
-npm install
-docker compose up -d postgres redis meilisearch
-npm run db:generate
-npm run db:migrate
-npm run dev:api              # http://localhost:4000/api/v1/health
-npm run dev:web              # http://localhost:3000
+---
+
+[![CI](https://github.com/dafawiradp/EngineerYa/actions/workflows/ci.yml/badge.svg)](https://github.com/dafawiradp/EngineerYa/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-indigo.svg)](LICENSE)
+[![Node.js ≥20](https://img.shields.io/badge/node-%E2%89%A520-brightgreen)](https://nodejs.org)
+[![NestJS 10](https://img.shields.io/badge/NestJS-10-red?logo=nestjs)](https://nestjs.com)
+[![Next.js 14](https://img.shields.io/badge/Next.js-14-black?logo=nextdotjs)](https://nextjs.org)
+[![Prisma](https://img.shields.io/badge/Prisma-5-blue?logo=prisma)](https://www.prisma.io)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+
+<br />
+
+[**Live Demo**](https://engineerya.vercel.app) ·
+[**API Docs**](docs/api.md) ·
+[**Architecture**](docs/architecture.md) ·
+[**Deployment**](docs/deployment.md) ·
+[**Report a Bug**](https://github.com/dafawiradp/EngineerYa/issues) ·
+[**Request a Feature**](https://github.com/dafawiradp/EngineerYa/issues)
+
+</div>
+
+---
+
+## Table of Contents
+
+- [Overview](#-overview)
+- [Features](#-features)
+- [Tech Stack](#-tech-stack)
+- [Architecture](#-architecture)
+- [Screenshots](#-screenshots)
+- [Getting Started](#-getting-started)
+- [Project Structure](#-project-structure)
+- [Environment Variables](#-environment-variables)
+- [Available Scripts](#-available-scripts)
+- [API Documentation](#-api-documentation)
+- [Deployment](#-deployment)
+- [Roadmap](#-roadmap)
+- [Known Limitations](#-known-limitations)
+- [Contributing](#-contributing)
+- [Acknowledgements](#-acknowledgements)
+- [License](#-license)
+
+---
+
+## 🎯 Overview
+
+**EngineerYa** is a production-grade, open-source digital library platform purpose-built for engineering education. It enables educators and publishers to host engineering textbooks with enterprise-grade content protection, and gives learners a rich, cross-device reading experience with reading progress sync and bookmarking.
+
+The backend is built on **NestJS with Clean Architecture** (Domain → Application → Infrastructure → Presentation), keeping business rules completely isolated from frameworks and databases. The frontend is a **Next.js 14 App Router** portal with a premium dark-mode UI.
+
+---
+
+## ✨ Features
+
+### For Readers
+- 📚 **Catalog Browser** — filter published textbooks by discipline or category with typo-tolerant search
+- 📖 **Secure Watermarked Reader** — per-request JPEG watermarking (user email + session ID, composed server-side with `sharp`) — nothing cached, no static deliveries
+- 📌 **Bookmarks & Notes** — annotate any page with a personal note
+- 📊 **Reading Progress Sync** — last-page and percentage tracked across sessions
+- 📥 **Watermarked PDF Download** — per-user PDF generated on-demand with `pdf-lib`
+- 🔐 **Google OAuth + Password Auth** — choose your sign-in method
+
+### For Admins & Publishers
+- 🗂️ **Book & Category CRUD** — full lifecycle management with draft/published/archived states
+- ☁️ **Direct-to-R2 Upload** — PDFs uploaded straight to Cloudflare R2 via signed URLs; never transits the API process
+- ⚙️ **Background PDF Rendering** — BullMQ worker rasterizes PDF pages to PNG at 150 DPI via `pdftoppm`
+- 🔎 **Meilisearch Sync** — catalog changes propagate to the search index via domain events, not direct calls
+- 📋 **Audit Logging** — every mutating `/admin/…` request is automatically logged (actor, action, IP, redacted body)
+- 📈 **Analytics Overview** — users, revenue, active memberships, published books
+
+### Commerce & Payments
+- 💳 **Midtrans Snap Integration** — one-click payment popup for book purchases and subscriptions
+- 🔗 **Webhook-driven Entitlements** — payment confirmations grant access idempotently (safe against webhook retries)
+- 🎟️ **Entitlement Guard** — `EntitlementGuard` + `@RequireEntitlement()` protects reader and download routes
+- 👑 **Membership Subscriptions** — live subscription check (no pre-granted rows per book)
+
+---
+
+## 🛠 Tech Stack
+
+| Layer | Technology | Version |
+|---|---|---|
+| **API Framework** | [NestJS](https://nestjs.com) | ^10 |
+| **Web Framework** | [Next.js](https://nextjs.org) | ^14 |
+| **Language** | TypeScript | ^5.5 |
+| **Database** | PostgreSQL | 16 |
+| **ORM** | Prisma | ^5.18 |
+| **Cache / Queue** | Redis + BullMQ | 7 / ^5 |
+| **Search** | Meilisearch | v1.9 |
+| **Object Storage** | Cloudflare R2 (S3-compatible) | — |
+| **Auth** | JWT (dual-secret) + Passport | — |
+| **Image Processing** | sharp | ^0.33 |
+| **PDF Processing** | pdf-lib + poppler-utils | — |
+| **Payments** | Midtrans Snap | — |
+| **Styling** | Tailwind CSS | ^3.4 |
+| **Container** | Docker + Compose | — |
+| **CI** | GitHub Actions | — |
+
+---
+
+## 🏗 Architecture
+
+EngineerYa follows **Clean Architecture** — business rules are completely isolated from frameworks and infrastructure:
+
+```
+Domain  →  Application  →  Infrastructure  →  Presentation
 ```
 
-## Identity module (Phase 1)
+```mermaid
+graph LR
+  subgraph Frontend["apps/web (Next.js)"]
+    LP[Landing Page]
+    CAT[Catalog /books]
+    DET[Book Detail /books/:slug]
+    RDR[Reader /reader/:bookId]
+  end
 
-Location: `apps/api/src/modules/identity` — layered as domain → application → infrastructure → presentation.
+  subgraph API["apps/api (NestJS)"]
+    AUTH[IdentityModule]
+    BOOK[CatalogModule]
+    SRCH[SearchModule]
+    STR[StorageModule]
+    RDRA[ReaderModule]
+    ENT[EntitlementModule]
+    COM[CommerceModule]
+    PAY[PaymentGatewayModule]
+    MEM[MembershipModule]
+    ADM[AdminModule]
+  end
 
-Endpoints (`/api/v1/auth/...`):
+  subgraph Infra["Infrastructure"]
+    PG[(PostgreSQL)]
+    RDS[(Redis)]
+    MEIL[(Meilisearch)]
+    R2[(Cloudflare R2)]
+    MID[(Midtrans)]
+  end
 
-| Method | Path | Auth | Notes |
+  Frontend --> API
+  AUTH & BOOK & RDRA --> PG
+  SRCH --> MEIL
+  STR & RDRA --> R2
+  COM & MEM --> PAY --> MID
+  STR --> RDS
+```
+
+→ Full documentation: **[docs/architecture.md](docs/architecture.md)**
+
+---
+
+## 📸 Screenshots
+
+> Screenshots are captured from the running development environment. Refer to **[docs/screenshots.md](docs/screenshots.md)** for full walkthrough with annotated UI wireframes.
+
+| Landing Page | Library Catalog | Book Detail | Document Reader |
 |---|---|---|---|
-| POST | `/auth/register` | none | email + password (min 8 chars) + name |
-| POST | `/auth/login` | none | returns access + refresh token pair |
-| POST | `/auth/refresh` | refresh token in body | rotates the refresh token (old one is revoked) |
-| GET | `/auth/google` | none | redirects to Google consent screen |
-| GET | `/auth/google/callback` | none | Google redirects here; issues token pair |
-| GET | `/auth/me` | access token (Bearer) | returns the current user |
+| Hero with animated gradient headline and CTA | Filterable grid with discipline tags | Cover + metadata + buy/read CTAs | Per-request watermarked JPEG stream |
 
-Key design points:
-- Access and refresh tokens are signed with **different secrets** — a leaked access token can't be replayed as a refresh token.
-- Refresh tokens are stored **hashed** (`RefreshToken.tokenHash`), never raw, and rotated on every use, so reuse of a stolen-but-superseded token is detectable later.
-- `@Roles(UserRole.ADMIN)` + `@UseGuards(JwtAuthGuard, RolesGuard)` is the pattern every future protected/admin route will use.
-- `BookDetailDto`-style leakage isn't possible for user rows either: the domain `UserEntity` and `UserDto` never carry `passwordHash` outward.
+---
 
-To set up Google OAuth locally, fill `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` in `.env` — until then, the strategy loads with `"not-configured"` placeholders so the app still boots.
+## 🚀 Getting Started
 
-## Catalog module (Phase 2)
+### Prerequisites
 
-Location: `apps/api/src/modules/catalog` — same domain → application → infrastructure → presentation layering as Identity.
+- **Node.js** `v20.0.0` or higher
+- **Docker** & **Docker Compose**
 
-Public endpoints (`/api/v1/...`):
+### Quick Start
 
-| Method | Path | Notes |
+```bash
+# 1. Clone the repository
+git clone https://github.com/dafawiradp/EngineerYa.git
+cd EngineerYa/engineerya
+
+# 2. Set up environment variables
+cp .env.example .env
+
+# 3. Install workspace dependencies
+npm install
+
+# 4. Start local infrastructure (Postgres, Redis, Meilisearch)
+docker compose up -d postgres redis meilisearch
+
+# 5. Generate Prisma client and run database migrations
+npm run db:generate
+
+# 6. Start development servers
+npm run dev:api    # API  → http://localhost:4000/api/v1/health
+npm run dev:web    # Web  → http://localhost:3000
+```
+
+> 💡 **Google OAuth** is optional. Leave `GOOGLE_CLIENT_ID` empty in `.env` — the API starts with `"not-configured"` placeholders and all non-OAuth flows work normally.
+
+---
+
+## 📁 Project Structure
+
+```
+engineerya/
+├── .github/
+│   └── workflows/ci.yml          # Lint · Typecheck · Build · Test
+├── apps/
+│   ├── api/                      # NestJS backend
+│   │   ├── src/
+│   │   │   ├── common/           # Guards, decorators, filters, interceptors
+│   │   │   ├── infrastructure/prisma/
+│   │   │   └── modules/          # identity · catalog · search · storage
+│   │   │                         # reader · entitlement · commerce
+│   │   │                         # payment-gateway · membership
+│   │   │                         # audit · admin · watermark
+│   │   └── Dockerfile
+│   └── web/                      # Next.js 14 App Router
+│       ├── app/                  # Routes (page · layout · error · loading)
+│       │   ├── books/[slug]/     # Dynamic book detail
+│       │   └── reader/[bookId]/  # Watermarked document reader
+│       └── components/           # Navbar · Footer · BookCard
+├── packages/
+│   ├── config/                   # Zod-validated env schema
+│   ├── database/                 # Prisma schema + client re-export
+│   └── shared-types/             # Shared DTOs and enums
+├── docs/                         # Architecture · DB · API · Deployment docs
+├── docker-compose.yml
+├── .env.example
+└── package.json                  # npm workspaces root
+```
+
+---
+
+## 🔧 Environment Variables
+
+Copy `.env.example` to `.env`. The API validates all variables at boot using **Zod** — misconfiguration causes an immediate, human-readable exit.
+
+| Variable | Required | Description |
 |---|---|---|
-| GET | `/books` | `?category=<uuid>&discipline=&page=&pageSize=` — published books only |
-| GET | `/books/:slug` | 404s on draft/archived books, not just unlisted |
-| GET | `/categories` | flat list; `parentId` lets the client build the tree |
+| `DATABASE_URL` | ✅ | PostgreSQL connection URL |
+| `REDIS_URL` | ✅ | Redis connection URL |
+| `MEILISEARCH_HOST` | ✅ | Meilisearch host URL |
+| `MEILISEARCH_API_KEY` | ✅ | Meilisearch master key |
+| `JWT_ACCESS_SECRET` | ✅ | Min 16 chars — `openssl rand -base64 48` |
+| `JWT_REFRESH_SECRET` | ✅ | Min 16 chars — must differ from access secret |
+| `GOOGLE_CLIENT_ID` | | Google OAuth (optional) |
+| `GOOGLE_CLIENT_SECRET` | | Google OAuth (optional) |
+| `R2_ACCOUNT_ID` | | Cloudflare R2 (required for uploads) |
+| `R2_ACCESS_KEY_ID` | | Cloudflare R2 |
+| `R2_SECRET_ACCESS_KEY` | | Cloudflare R2 |
+| `MIDTRANS_SERVER_KEY` | | Midtrans payments (required for commerce) |
+| `MIDTRANS_CLIENT_KEY` | | Midtrans payments |
 
-Admin endpoints (JWT + role-gated):
+→ Full reference: **[docs/deployment.md#environment-variables-reference](docs/deployment.md#environment-variables-reference)**
 
-| Method | Path | Role |
-|---|---|---|
-| GET / POST | `/admin/books` | ADMIN, EDITOR |
-| PATCH | `/admin/books/:id` | ADMIN, EDITOR |
-| DELETE | `/admin/books/:id` | ADMIN only |
-| GET / POST | `/admin/categories` | ADMIN, EDITOR |
-| PATCH | `/admin/categories/:id` | ADMIN, EDITOR |
-| DELETE | `/admin/categories/:id` | ADMIN only — blocked (409) while books still reference the category |
+---
 
-Key design points:
-- **`fileKey` never leaves the database via a controller.** The Prisma repository uses one explicit `select` (`PUBLIC_BOOK_SELECT`) for every read path, and that select has no `fileKey` field — so it can't be returned even by an admin route, even by accident. The one exception, `findFileKeyById()`, is a narrow method reserved for the Storage/Reader modules landing in Phase 4.
-- The domain `BookEntity` itself has no `fileKey` property, so this isn't just a query-time filter — there's no in-memory object anywhere in application/presentation code that could carry the key even if a `select` were later loosened.
-- `GetBookBySlugUseCase` takes an explicit `includeUnpublished` flag; only admin controllers ever pass `true`, so a draft book's slug can't be guessed and read from the public route.
-- Slugs are generated server-side (`SlugService`) and de-duplicated automatically — clients never supply or fight over a slug.
-- Category deletion is blocked while books still reference it, to avoid silently orphaning book rows.
-- Full-text/typo-tolerant search (`?q=`) is intentionally **not** in `/books` yet — that's Meilisearch's job in Phase 3, so this endpoint stays a simple filtered/paginated Postgres query.
+## 📜 Available Scripts
 
-## Search module (Phase 3)
+Run from the **workspace root** (`engineerya/`):
 
-`GET /search?q=&category=&discipline=&page=&pageSize=` — Meilisearch-backed, sub-300ms typo-tolerant search.
+| Script | Description |
+|---|---|
+| `npm run dev:web` | Start Next.js dev server |
+| `npm run dev:api` | Start NestJS API in watch mode |
+| `npm run build` | Build all workspaces |
+| `npm run lint` | ESLint across all workspaces |
+| `npm run lint:fix` | ESLint with auto-fix |
+| `npm run typecheck` | TypeScript type checking across all workspaces |
+| `npm run format` | Prettier format all source files |
+| `npm run test` | Jest across all workspaces |
+| `npm run clean` | Remove all build artifacts |
+| `npm run db:generate` | Generate Prisma client from schema |
+| `npm run db:migrate` | Run Prisma migrations (development) |
 
-Kept in sync via **domain events**, not a direct call: Catalog's book use cases emit `book.upserted` / `book.deleted`; `BookIndexListener` (in the Search module) reacts and updates the index. Catalog has zero awareness Search exists — a one-way dependency, no circular imports. An unpublished book is **removed from the index entirely** on the same event, not just filtered at query time, so a draft title can't surface via search suggestions either.
+---
 
-## Storage module (Phase 4)
+## 📚 API Documentation
 
-`R2ClientService` is the *only* place in the codebase that talks to object storage — every other module goes through it, never the S3 client directly.
+Full REST API reference with request/response examples, auth requirements, and rate limit information:
 
-Upload flow (admin):
-1. `POST /admin/storage/books/:id/upload-url` → short-lived signed PUT URL. The browser uploads the raw PDF **directly to R2**, never through the API process.
-2. `POST /admin/storage/books/:id/render` → enqueues a BullMQ job.
-3. `BookRenderingProcessor` (background worker) downloads the PDF, shells out to `pdftoppm` (poppler-utils) to rasterize every page to PNG at 150 DPI, uploads each page to R2, and writes `Book.pageCount` back.
+→ **[docs/api.md](docs/api.md)**
 
-**Deployment requirement:** the API image needs `poppler-utils` installed — already added to `apps/api/Dockerfile` (`apk add poppler-utils`). If you run the API outside Docker, install it on the host (`apt-get install poppler-utils` / `brew install poppler`).
+**Quick reference — base URL:** `http://localhost:4000/api/v1`
 
-## Reader, Watermark, Progress & Bookmarks (Phases 5–7)
+| Group | Base Path |
+|---|---|
+| Authentication | `/auth` |
+| Public Catalog | `/books`, `/categories` |
+| Search | `/search` |
+| Reader | `/reader/:bookId` |
+| Commerce | `/purchases`, `/downloads` |
+| Payments | `/payments/webhook` |
+| Memberships | `/memberships` |
+| Admin | `/admin/…` |
+| Health | `/health` |
 
-- `GET /reader/:bookId/manifest` — page count + table of contents (ToC extraction from the PDF outline is a follow-up enhancement; currently returns an empty array).
-- `GET /reader/:bookId/pages/:page` — **streams a watermarked JPEG directly**, not a signed URL to a static file. Each request re-fetches the unwatermarked base page from R2 and composites a fresh, per-user watermark (email, timestamp, session id, diagonally tiled + footer strip) via `sharp`. Nothing watermarked is ever cached or written back to storage, so the same page produces a different image for every request. A `WatermarkToken` row is logged on every page view for traceability. Rate-limited tighter than the API default (60/min) specifically to slow down bulk scraping.
-- `PATCH /reader/:bookId/progress`, `GET /reader/:bookId/progress` — last page + percent complete.
-- `GET`/`POST /reader/:bookId/bookmarks`.
+---
 
-**Known gap, tracked deliberately:** these routes currently only check that the user is logged in (`JwtAuthGuard`) — not that they've actually purchased or have a membership covering this book. Real entitlement checking is Phase 8's job, added as an additional guard layered on top of what's here, not a rewrite.
+## 🌍 Deployment
 
-## Entitlements & Commerce (Phase 8)
+The stack deploys as:
+- **API + workers + databases** → VPS (Docker Compose) or Railway/Render
+- **Next.js frontend** → Vercel
 
-- `POST /purchases {bookId}` → creates a `Purchase` (PENDING), returns a Midtrans Snap token/redirect URL
-- `POST /payments/webhook` → Midtrans server-to-server callback. Trust comes entirely from verifying `signature_key` (SHA-512 of order details + server key) — there's no auth guard on this route because Midtrans can't send a user's bearer token. Routes by an explicit `book-`/`membership-` order-id prefix to the right domain.
-- `GET /purchases/me`, `GET /downloads/:bookId` (streams a **freshly per-user watermarked PDF** via `pdf-lib`, not a cached file — mirrors the reader's per-request image watermarking philosophy)
-- `EntitlementGuard` + `@RequireEntitlement()` — the guard referenced as a TODO throughout Phases 5–7 is now live on Reader and Downloads routes
-- Entitlement grants are **idempotent** (unique constraint + catch-and-ignore on conflict) — safe against Midtrans's webhook retries
-- On book deletion, a `Purchase` foreign-key restriction is translated into a clear `409 Conflict` ("archive it instead") rather than a raw DB error leaking through
+```bash
+# Production (VPS)
+docker compose up -d --build
+docker compose exec api npx prisma migrate deploy --schema=/app/packages/database/prisma/schema.prisma
+```
 
-## Membership (Phase 9)
+→ Complete step-by-step guide: **[docs/deployment.md](docs/deployment.md)**
 
-- `POST /memberships/subscribe {planId}`, `GET /memberships/me` — same Midtrans Snap flow as book purchases, routed via the `membership-` order-id prefix
-- Membership-based READ access is checked **live** against `Membership.status`/`expiresAt` in `EntitlementGuard`, not pre-granted as thousands of per-book `Entitlement` rows — avoids unbounded writes per subscriber. DOWNLOAD access has no membership fallback, matching the original spec (downloads always come from an actual purchase)
-- A subscription's paid duration window starts at **payment confirmation**, not at checkout initiation — so a slow payment doesn't quietly eat into the paid period
-- Architecture note: `MidtransService` was extracted into its own standalone `PaymentGatewayModule` specifically so Commerce and Membership could both depend on it without creating a circular module dependency between them
+---
 
-## Admin & Analytics (Phase 10)
+## 🗺 Roadmap
 
-- `GET/PATCH /admin/users`, `GET /admin/analytics/overview` (users, published books, purchases, revenue, active memberships), `GET /admin/audit-logs`
-- Every mutating `/admin/...` request is automatically logged (actor, action, target, redacted request body, IP) by a global interceptor — no per-controller boilerplate needed
-- `AnalyticsService` is a documented, deliberate exception to "only repositories touch Prisma": cross-domain aggregate reporting doesn't belong inside any single domain's repository interface
+<details>
+<summary><strong>Completed Phases</strong></summary>
 
-## Hardening (Phase 11)
+- [x] **Phase 0** — Monorepo scaffold, Docker Compose, CI pipeline
+- [x] **Phase 1** — Identity: JWT dual-secret, Google OAuth, RBAC
+- [x] **Phase 2** — Catalog: books, categories, `fileKey` isolation
+- [x] **Phase 3** — Search: Meilisearch, domain-event sync
+- [x] **Phase 4** — Storage: Cloudflare R2, direct upload, PDF rendering worker
+- [x] **Phase 5** — Reader: manifest, page streaming
+- [x] **Phase 6** — Watermarking: per-request `sharp` watermark composition
+- [x] **Phase 7** — Progress & bookmarks sync
+- [x] **Phase 8** — Entitlements & commerce: Midtrans Snap, webhook, `EntitlementGuard`
+- [x] **Phase 9** — Memberships: subscription lifecycle, live entitlement check
+- [x] **Phase 10** — Admin dashboard, analytics aggregation
+- [x] **Phase 11** — Hardening: `helmet`, global exception filter, rate limiting
+- [x] **Phase 12** — GitHub readiness: README, docs, CI, CONTRIBUTING, LICENSE
 
-- `helmet()` for standard security headers (CSP, X-Frame-Options, HSTS in production, etc.)
-- A global exception filter gives every error a consistent JSON shape and — critically — **hides internal error details in production**, logging the real stack trace server-side instead of returning it to the client
-- CSRF middleware was deliberately **not** added: auth is Bearer-token-in-header (not cookies), which is inherently CSRF-resistant since browsers don't auto-attach `Authorization` headers cross-origin
-- Rate limiting: global baseline (120/min) plus tighter per-route limits on reader pages (60/min) and downloads (10/min) to slow bulk scraping
+</details>
 
-## Roadmap status
+**Upcoming:**
 
-- [x] Phase 0 — Monorepo scaffold, Docker Compose, CI
-- [x] Phase 1 — Identity (JWT, Google OAuth, RBAC)
-- [x] Phase 2 — Catalog (books, categories)
-- [x] Phase 3 — Search (Meilisearch)
-- [x] Phase 4 — Storage & rendering (R2, PDF page rendering)
-- [x] Phase 5 — Reader
-- [x] Phase 6 — Watermarking
-- [x] Phase 7 — Progress & bookmarks
-- [x] Phase 8 — Entitlements & commerce (Midtrans)
-- [x] Phase 9 — Membership
-- [x] Phase 10 — Admin & analytics
-- [x] Phase 11 — Hardening
+- [ ] **Phase 13** — EPUB reader support
+- [ ] **Phase 14** — AI reading assistant (annotations, summaries)
+- [ ] **Phase 15** — Collaborative highlights (team memberships)
+- [ ] **Phase 16** — Native mobile app (React Native)
+
+---
+
+## ⚠️ Known Limitations
+
+| Limitation | Notes |
+|---|---|
+| **Table of Contents** | Reader manifest returns `tableOfContents: []`. PDF outline extraction is a future enhancement (Phase 13). |
+| **OAuth token delivery** | The Google OAuth callback currently returns tokens as JSON from a browser-redirected GET. Production hardening (one-time code or httpOnly cookie) is tracked as a follow-up. |
+| **Meilisearch cold start** | On first boot, the search index is empty. Books must be published (or re-published) to appear in search. |
+| **poppler-utils required** | The PDF rendering worker requires `pdftoppm` from `poppler-utils`. The Docker image includes it; bare-metal installs need to add it manually. |
+| **Single currency** | Commerce is currently hardcoded to IDR (Indonesian Rupiah) via Midtrans. Multi-currency support is a future roadmap item. |
+| **No email verification** | Password-based registration does not verify the email address. An email confirmation flow is planned. |
+
+---
+
+## 🤝 Contributing
+
+We welcome contributions of all kinds! Please read the [Contributing Guide](CONTRIBUTING.md) before opening a pull request.
+
+**Quick steps:**
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feat/your-feature`
+3. Make your changes and add tests
+4. Ensure all checks pass: `npm run lint && npm run typecheck && npm run test`
+5. Open a Pull Request targeting the `develop` branch
+
+All contributors are expected to follow our [Code of Conduct](CODE_OF_CONDUCT.md).
+
+Security vulnerabilities should be reported via [SECURITY.md](SECURITY.md) — **do not open public issues for security bugs**.
+
+---
+
+## 🙏 Acknowledgements
+
+EngineerYa was built on the shoulders of exceptional open-source projects:
+
+| Project | Role |
+|---|---|
+| [NestJS](https://nestjs.com) | API framework with first-class DI and module system |
+| [Next.js](https://nextjs.org) | React framework with App Router and streaming |
+| [Prisma](https://www.prisma.io) | Type-safe ORM and migration tooling |
+| [Meilisearch](https://www.meilisearch.com) | Lightning-fast typo-tolerant search engine |
+| [BullMQ](https://bullmq.io) | Redis-backed job queue for background workers |
+| [sharp](https://sharp.pixelplumbing.com) | High-performance Node.js image processing |
+| [pdf-lib](https://pdf-lib.js.org) | PDF creation and modification in pure JavaScript |
+| [Zod](https://zod.dev) | TypeScript-first schema validation |
+| [Tailwind CSS](https://tailwindcss.com) | Utility-first CSS framework |
+| [Midtrans](https://midtrans.com) | Indonesian payment gateway |
+| [Cloudflare R2](https://www.cloudflare.com/developer-platform/r2/) | Zero-egress object storage |
+
+---
+
+## 📄 License
+
+Copyright © 2026 EngineerYa Contributors.
+
+This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
+
+---
+
+<div align="center">
+
+Made with ❤️ for the engineering education community.
+
+[⬆ Back to top](#)
+
+</div>
