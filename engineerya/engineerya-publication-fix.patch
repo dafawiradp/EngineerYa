@@ -1,0 +1,229 @@
+diff --git a/engineerya/.env.example b/engineerya/.env.example
+index dec939d..0000000 100644
+--- a/engineerya/.env.example
++++ b/engineerya/.env.example
+@@ -1,29 +1,39 @@
+-# --- App ---
++# Copy this file to .env for local development.
++# Never commit .env or paste real credentials here.
++
++# --- App ---
+ NODE_ENV=development
+ API_PORT=4000
+ WEB_PORT=3000
+-API_URL=https://api.engineerya.site
+-WEB_URL=https://engineerya.site
++API_URL=http://localhost:4000
++WEB_URL=http://localhost:3000
+ 
+ # --- Database ---
+-DATABASE_URL=postgresql://postgres.qkxszgszznbktxkjizqp:[YOUR-PASSWORD]@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres?pgbouncer=true
++DATABASE_URL=postgresql://engineerya:engineerya_dev_password@localhost:5432/engineerya
+ 
+ # --- Redis ---
+-REDIS_URL=redis://default:gQAAAAAAArR_AAIgcDFjZmU2YzZiNTQ5MmM0ZWE0OTRiMjNkNzM1YWM5ZjE2Zg@willing-marmot-177279.upstash.io:6379
++REDIS_URL=redis://localhost:6379
+ 
+ # --- Meilisearch ---
+ MEILISEARCH_HOST=http://localhost:7700
+ MEILISEARCH_API_KEY=engineerya_dev_master_key
+ 
+ # --- JWT ---
+-JWT_ACCESS_SECRET=208709f3c46c22e8870b224bd622e4cfa0d383b9d81ddcdc94be4b3547e3dcb9d2afc7cc67401739accdeac1e47ec2600502a9c162e085d1131b7dd2979b168f
+-JWT_REFRESH_SECRET=8ef3f19015c2507b8fd17cceedcb0f15f7e48c422710817f968018489c18edc109497ef399f3da9b8ae451c976493d310226dd5324ddfdcd2024464cbfbc16d2
++JWT_ACCESS_SECRET=replace-with-a-random-secret-at-least-16-characters
++JWT_REFRESH_SECRET=replace-with-a-different-random-secret-at-least-16-characters
+ JWT_ACCESS_EXPIRES_IN=15m
+ JWT_REFRESH_EXPIRES_IN=7d
+ 
+ # --- Google OAuth ---
+-GOOGLE_CLIENT_ID=582353896574-ou4ld6h4ul57n4vp38u8jl2ii1fg1fb2.apps.googleusercontent.com
+-GOOGLE_CLIENT_SECRET=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
++GOOGLE_CLIENT_ID=
++GOOGLE_CLIENT_SECRET=
+ GOOGLE_CALLBACK_URL=http://localhost:4000/api/v1/auth/google/callback
+ 
+-# --- Blackblaze B2 ---
+-B2_BUCKET_NAME=engineerya-books
+-B2_KEY_ID=005b24d3b879e00000000001
+-B2_APPLICATION_KEY=K0050tbt5BcO71By55ZhSZbQ00CgnP8
+-B2_ENDPOINT=s3.us-east-005.backblazeb2.com
++# --- Cloudflare R2 ---
++R2_ACCOUNT_ID=
++R2_ACCESS_KEY_ID=
++R2_SECRET_ACCESS_KEY=
++R2_BUCKET_NAME=engineerya-books
++R2_SIGNED_URL_TTL_SECONDS=120
+ 
+ # --- Midtrans ---
+-MIDTRANS_SERVER_KEY=Mid-server-cbqPuHl7q-kPmJsDcid-3ovV
+-MIDTRANS_CLIENT_KEY=Mid-client-Vmo0_lt1plsMG77x
++MIDTRANS_SERVER_KEY=
++MIDTRANS_CLIENT_KEY=
+ MIDTRANS_IS_PRODUCTION=false
+*** Update File: engineerya/packages/config/src/index.ts
+@@
+-const envSchema = z.object({
++const booleanFromEnv = z.preprocess((value) => {
++ if (typeof value !== "string") return value;
++ return value.toLowerCase() === "true";
++}, z.boolean().default(false));
++
++const envSchema = z.object({
+  NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
+  API_PORT: z.coerce.number().default(4000),
++ WEB_PORT: z.coerce.number().default(3000),
++ API_URL: z.string().url().default("http://localhost:4000"),
++ WEB_URL: z.string().url().default("http://localhost:3000"),
+@@
+- MIDTRANS_IS_PRODUCTION: z.coerce.boolean().default(false),
+-});
++ MIDTRANS_IS_PRODUCTION: booleanFromEnv,
++}).superRefine((values, context) => {
++ if (values.JWT_ACCESS_SECRET === values.JWT_REFRESH_SECRET) {
++ context.addIssue({
++ code: z.ZodIssueCode.custom,
++ path: ["JWT_REFRESH_SECRET"],
++ message: "JWT refresh secret must differ from access secret",
++ });
++ }
++
++ const r2Values = [
++ values.R2_ACCOUNT_ID,
++ values.R2_ACCESS_KEY_ID,
++ values.R2_SECRET_ACCESS_KEY,
++ ];
++ if (r2Values.some(Boolean) && r2Values.some((value) => !value)) {
++ context.addIssue({
++ code: z.ZodIssueCode.custom,
++ path: ["R2_ACCOUNT_ID"],
++ message: "R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, and R2_SECRET_ACCESS_KEY must be configured together",
++ });
++ }
++});
+ 
+-export type AppEnv = z.infer;
++export type AppEnv = z.infer<typeof envSchema>;
+*** Update File: engineerya/apps/api/src/main.ts
+@@
+-import { ValidationPipe } from "@nestjs/common";
++import { Logger, ValidationPipe } from "@nestjs/common";
+@@
+ async function bootstrap() {
+  const env = loadEnv();
++ const logger = new Logger("Bootstrap");
+ 
+  const app = await NestFactory.create(AppModule);
++ app.enableShutdownHooks();
+@@
+  app.enableCors({
+- origin: env.NODE_ENV === "production" ? [process.env.WEB_URL ?? ""] : true,
++ origin: env.NODE_ENV === "production" ? env.WEB_URL : true,
+  credentials: true,
+  });
+ 
+  await app.listen(env.API_PORT);
+- // eslint-disable-next-line no-console
+- console.log(`🚀 EngineerYa API running on http://localhost:${env.API_PORT}/api/v1`);
++ logger.log(`EngineerYa API listening on ${env.API_URL}/api/v1`);
+ }
+*** Update File: engineerya/package.json
+@@
+     "lint": "npm run lint --workspaces --if-present",
+     "lint:fix": "npm run lint:fix --workspaces --if-present",
+     "typecheck": "npm run typecheck --workspaces --if-present",
+     "format": "prettier --write \"**/*.{ts,tsx,js,json,css,md}\" --ignore-path .gitignore",
++    "format:check": "prettier --check \"**/*.{ts,tsx,js,json,css,md}\" --ignore-path .gitignore",
+     "test": "npm run test --workspaces --if-present",
++    "test:ci": "npm run test --workspaces --if-present -- --ci --runInBand",
+     "clean": "npx rimraf apps/web/.next apps/web/out apps/api/dist packages/database/dist",
+     "db:generate": "npm run generate --workspace=packages/database",
+-    "db:migrate": "npm run migrate:dev --workspace=packages/database"
++    "db:migrate": "npm run migrate:dev --workspace=packages/database",
++    "db:deploy": "npm run migrate:deploy --workspace=packages/database",
++    "verify": "npm run db:generate && npm run lint && npm run typecheck && npm run test:ci && npm run build"
+*** Update File: engineerya/.gitignore
+@@
+ # --- Node & NPM / PNPM / Yarn ---
+ node_modules/
+ npm-debug.log*
+@@
+ package-lock.json.bak
++
++# --- Build metadata ---
++*.tsbuildinfo
++.turbo/
++.vercel/
+@@
+ logs/
+ *.log.*
++
++# --- Local uploads and generated assets ---
++uploads/
++tmp/
++*.tmp
+*** Update File: engineerya/.github/workflows/ci.yml
+@@
+ name: CI
++
++permissions:
++ contents: read
+@@
+- - name: Install dependencies
+- run: npm ci
++ - name: Install dependencies
++ run: npm ci --ignore-scripts
+@@
+  - name: Test
+- run: npm run test
++ run: npm run test:ci
+  env:
+@@
+  JWT_REFRESH_SECRET: ci_refresh_secret_ci_refresh_secret
++ WEB_URL: http://localhost:3000
++ API_URL: http://localhost:4000
+*** Add File: engineerya/.github/CODEOWNERS
++# Default ownership for repository changes.
++* @dafawiradp
+*** Add File: engineerya/.github/workflows/security.yml
++name: Security
++
++on:
++ pull_request:
++ push:
++ branches: [main]
++
++permissions:
++ contents: read
++ security-events: write
++ actions: read
++
++jobs:
++ codeql:
++ runs-on: ubuntu-latest
++ steps:
++ - uses: actions/checkout@v4
++ - uses: github/codeql-action/init@v3
++ with:
++ languages: javascript-typescript
++ - uses: github/codeql-action/analyze@v3
++
++ dependency-review:
++ if: github.event_name == 'pull_request'
++ runs-on: ubuntu-latest
++ permissions:
++ contents: read
++ pull-requests: write
++ steps:
++ - uses: actions/dependency-review-action@v4
+*** Update File: engineerya/README.md
+@@
+ [**Request a Feature**](https://github.com/dafawiradp/EngineerYa/issues)
+ 
+ ---
++
++> **Project status:** EngineerYa is in active development. Review [`SECURITY.md`](SECURITY.md) and rotate all local credentials before deploying. The repository is not a production release until the CI and release checklist pass from a clean checkout.
+ 
+ ## Table of Contents
+*** Delete File: engineerya/DEPLOYMENT.md
+*** Delete File: engineerya/apps/web/tsconfig.tsbuildinfo
