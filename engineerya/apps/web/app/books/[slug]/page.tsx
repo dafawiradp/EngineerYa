@@ -13,6 +13,7 @@ export function generateStaticParams() {
     { slug: "compiler-construction" },
     { slug: "control-systems" },
     { slug: "fluid-mechanics" },
+    { slug: "chemical-process-principles" },
   ];
 }
 
@@ -113,6 +114,18 @@ const MOCK_BOOKS_DETAILS = [
     pageCount: 520,
     publishedAt: "2023-05-18",
     priceCents: 6500,
+  },
+  {
+    id: "9",
+    title: "Chemical Process Principles",
+    slug: "chemical-process-principles",
+    coverUrl: "",
+    discipline: "Chemical Engineering",
+    description: "A practical introduction to mass balance, energy balance, thermodynamics, reaction engineering, and unit operations for chemical engineers.",
+    authorNames: ["Richard M. Felder", "Ronald W. Rousseau"],
+    pageCount: 460,
+    publishedAt: "2024-06-10",
+    priceCents: 5400,
   },
 ];
 

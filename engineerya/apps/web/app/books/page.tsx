@@ -18,6 +18,16 @@ const MOCK_CATALOG: BookSummaryDto[] = [
     status: BookStatus.PUBLISHED,
   },
   {
+    id: "9",
+    title: "Chemical Process Principles",
+    slug: "chemical-process-principles",
+    coverUrl: "",
+    discipline: "Chemical Engineering",
+    categoryId: "cat-6",
+    priceCents: 5400,
+    status: BookStatus.PUBLISHED,
+  },
+  {
     id: "2",
     title: "Microservices Architecture & Patterns",
     slug: "microservices-architecture-patterns",
