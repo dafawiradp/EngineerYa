@@ -76,10 +76,10 @@ export default function HomePage() {
           
           <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link href="/books" className="w-full sm:w-auto bg-[#0077B6] hover:bg-[#00B4D8] text-white px-8 py-3.5 rounded-xl font-medium shadow-xl shadow-[#0077B6]/20 hover:shadow-[#00B4D8]/30 transition-all hover:scale-105">
-              Explore Library Catalog
+              Start Reading Free
             </Link>
-            <Link href="#pricing" className="w-full sm:w-auto bg-[#F8FDFF] hover:bg-[#CAF0F8] text-[#03045E] px-8 py-3.5 rounded-xl font-medium border border-[#00B4D8]/20 hover:border-[#0077B6] transition-all duration-300">
-              Membership Plans
+            <Link href="/materials" className="w-full sm:w-auto bg-[#F8FDFF] hover:bg-[#CAF0F8] text-[#03045E] px-8 py-3.5 rounded-xl font-medium border border-[#00B4D8]/20 hover:border-[#0077B6] transition-all duration-300">
+              Open Free Materials
             </Link>
           </div>
         </div>

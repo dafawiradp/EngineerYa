@@ -19,10 +19,10 @@ export function Navbar() {
             <div className="hidden md:block">
               <div className="ml-10 flex items-baseline space-x-6">
                 <Link href="/books" className="text-[#03045E] hover:text-[#0077B6] px-3 py-2 rounded-md text-sm font-medium transition-colors">
-                  Library Catalog
+                  Public Library
                 </Link>
-                <Link href="/#pricing" className="text-[#03045E] hover:text-[#0077B6] px-3 py-2 rounded-md text-sm font-medium transition-colors">
-                  Memberships
+                <Link href="/materials" className="text-[#03045E] hover:text-[#0077B6] px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                  Free Materials
                 </Link>
                 <Link href="/#roadmap" className="text-[#03045E] hover:text-[#0077B6] px-3 py-2 rounded-md text-sm font-medium transition-colors">
                   Roadmap
@@ -31,11 +31,11 @@ export function Navbar() {
             </div>
           </div>
           <div className="hidden md:flex items-center space-x-4">
-            <Link href="/login" className="text-[#03045E] hover:text-[#0077B6] px-3 py-2 rounded-md text-sm font-medium transition-colors">
-              Sign In
+            <Link href="/materials" className="text-[#03045E] hover:text-[#0077B6] px-3 py-2 rounded-md text-sm font-medium transition-colors">
+              Open Access
             </Link>
-            <Link href="/register" className="bg-[#0077B6] hover:bg-[#00B4D8] text-white px-4 py-2 rounded-lg text-sm font-medium shadow-lg shadow-[#0077B6]/20 transition-all hover:scale-105">
-              Get Started
+            <Link href="/books" className="bg-[#0077B6] hover:bg-[#00B4D8] text-white px-4 py-2 rounded-lg text-sm font-medium shadow-lg shadow-[#0077B6]/20 transition-all hover:scale-105">
+              Start Reading
             </Link>
           </div>
           <div className="md:hidden">
@@ -64,14 +64,14 @@ export function Navbar() {
             className="text-slate-300 hover:text-white block px-3 py-2 rounded-md text-base font-medium transition-colors"
             onClick={() => setIsMobileMenuOpen(false)}
           >
-            Library Catalog
+            Public Library
           </Link>
           <Link
-            href="/#pricing"
+            href="/materials"
             className="text-slate-300 hover:text-white block px-3 py-2 rounded-md text-base font-medium transition-colors"
             onClick={() => setIsMobileMenuOpen(false)}
           >
-            Memberships
+            Free Materials
           </Link>
           <Link
             href="/#roadmap"
@@ -82,18 +82,18 @@ export function Navbar() {
           </Link>
           <div className="pt-4 border-t border-slate-800 flex flex-col space-y-2">
             <Link
-              href="/login"
+              href="/materials"
               className="text-[#03045E] hover:text-[#0077B6] block px-3 py-2 rounded-md text-base font-medium transition-colors text-center"
               onClick={() => setIsMobileMenuOpen(false)}
             >
-              Sign In
+              Open Access
             </Link>
             <Link
-              href="/register"
+              href="/books"
               className="bg-[#0077B6] hover:bg-[#00B4D8] text-white block px-3 py-2 rounded-md text-base font-medium text-center transition-colors"
               onClick={() => setIsMobileMenuOpen(false)}
             >
-              Get Started
+              Start Reading
             </Link>
           </div>
         </div>
