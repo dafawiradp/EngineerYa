@@ -89,7 +89,7 @@ const MOCK_CATALOG: BookSummaryDto[] = [
   },
 ];
 
-const DISCIPLINES = ["All", "Software", "Electrical", "Mechanical", "Civil", "Aerospace"];
+const DISCIPLINES = ["All", "Software", "Electrical", "Mechanical", "Civil", "Aerospace", "Chemical Engineering"];
 
 export default function CatalogPage() {
   const [searchTerm, setSearchTerm] = useState("");

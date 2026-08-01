@@ -18,6 +18,8 @@ export function BookCard({ book }: BookCardProps) {
         return "bg-[#CAF0F8]/70 text-[#0077B6] border-[#00B4D8]/20";
       case "civil":
         return "bg-[#90E0EF]/40 text-[#03045E] border-[#0077B6]/20";
+      case "chemical engineering":
+        return "bg-[#CAF0F8]/70 text-[#03045E] border-[#0077B6]/20";
       default:
         return "bg-[#00B4D8]/10 text-[#0077B6] border-[#00B4D8]/20";
     }
