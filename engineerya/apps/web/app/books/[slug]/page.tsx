@@ -1,9 +1,20 @@
-"use client";
-
 import Link from "next/link";
-import { useParams } from "next/navigation";
 import { Navbar } from "../../../components/Navbar";
 import { Footer } from "../../../components/Footer";
+import { BookDetailActions } from "./BookDetailActions";
+
+export function generateStaticParams() {
+  return [
+    { slug: "modern-database-internals" },
+    { slug: "microservices-architecture-patterns" },
+    { slug: "signals-and-systems" },
+    { slug: "flight-dynamics" },
+    { slug: "structural-analysis-design" },
+    { slug: "compiler-construction" },
+    { slug: "control-systems" },
+    { slug: "fluid-mechanics" },
+  ];
+}
 
 // Mock database to match slugs
 const MOCK_BOOKS_DETAILS = [
@@ -105,19 +116,19 @@ const MOCK_BOOKS_DETAILS = [
   },
 ];
 
-export default function BookDetailPage() {
-  const { slug } = useParams();
+export default function BookDetailPage({ params }: { params: { slug: string } }) {
+  const { slug } = params;
   const book = MOCK_BOOKS_DETAILS.find((b) => b.slug === slug);
 
   if (!book) {
     return (
-      <div className="flex flex-col min-h-screen bg-[#0B0F19]">
+      <div className="flex flex-col min-h-screen bg-[#90E0EF]">
         <Navbar />
         <div className="flex-grow flex flex-col items-center justify-center text-center p-8">
           <span className="text-4xl mb-4">📖</span>
-          <h2 className="text-2xl font-bold text-white">Book not found</h2>
-          <p className="text-slate-400 mt-2">The textbook you requested does not exist in our catalog.</p>
-          <Link href="/books" className="mt-6 bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2.5 rounded-lg text-sm transition-all">
+          <h2 className="text-2xl font-bold text-[#03045E]">Book not found</h2>
+          <p className="text-[#0077B6] mt-2">The textbook you requested does not exist in our catalog.</p>
+          <Link href="/books" className="mt-6 bg-[#0077B6] hover:bg-[#00B4D8] text-white px-5 py-2.5 rounded-lg text-sm transition-all">
             Return to Catalog
           </Link>
         </div>
@@ -126,20 +137,21 @@ export default function BookDetailPage() {
     );
   }
 
-  const formattedPrice = (book.priceCents / 100).toLocaleString("en-US", {
+  const formattedPrice = new Intl.NumberFormat("id-ID", {
     style: "currency",
-    currency: "USD",
-  });
+    currency: "IDR",
+    maximumFractionDigits: 0,
+  }).format(book.priceCents * 100);
 
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
 
-      <main className="flex-grow py-12 md:py-20 bg-[#0B0F19] relative">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(99,102,241,0.08),transparent_50%)] pointer-events-none" />
+      <main className="flex-grow py-12 md:py-20 bg-[#90E0EF] relative">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(0,180,216,0.18),transparent_50%)] pointer-events-none" />
         
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <Link href="/books" className="text-indigo-400 hover:text-indigo-300 text-sm font-semibold mb-8 inline-flex items-center space-x-1">
+          <Link href="/books" className="text-[#0077B6] hover:text-[#03045E] text-sm font-semibold mb-8 inline-flex items-center space-x-1">
             <span>&larr;</span>
             <span>Back to Catalog</span>
           </Link>
@@ -147,11 +159,11 @@ export default function BookDetailPage() {
           <div className="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-12 mt-4">
             {/* Book Cover Banner */}
             <div className="md:col-span-4">
-              <div className="relative aspect-[3/4] w-full bg-slate-900 rounded-2xl border border-slate-800/80 overflow-hidden flex items-center justify-center shadow-2xl">
-                <div className="absolute inset-0 bg-gradient-to-br from-indigo-950/45 to-slate-950 flex flex-col items-center justify-center p-6 text-center">
+              <div className="relative aspect-[3/4] w-full bg-[#F8FDFF] rounded-2xl border border-[#00B4D8]/30 overflow-hidden flex items-center justify-center shadow-2xl">
+                <div className="absolute inset-0 bg-gradient-to-br from-[#00B4D8]/20 to-[#0077B6]/20 flex flex-col items-center justify-center p-6 text-center">
                   <span className="text-6xl mb-4">📚</span>
-                  <span className="text-[10px] tracking-widest font-extrabold text-slate-500 uppercase">ENGINEERYA TEXTBOOK</span>
-                  <h2 className="text-xl font-extrabold text-white mt-4 line-clamp-3 px-2">{book.title}</h2>
+                  <span className="text-[10px] tracking-widest font-extrabold text-[#0077B6] uppercase">ENGINEERYA TEXTBOOK</span>
+                  <h2 className="text-xl font-extrabold text-[#03045E] mt-4 line-clamp-3 px-2">{book.title}</h2>
                 </div>
               </div>
             </div>
@@ -159,56 +171,43 @@ export default function BookDetailPage() {
             {/* Book Meta Details */}
             <div className="md:col-span-8 flex flex-col justify-between">
               <div>
-                <span className="text-xs uppercase tracking-wider bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-3 py-1 rounded-full font-bold">
+                <span className="text-xs uppercase tracking-wider bg-[#00B4D8]/10 text-[#0077B6] border border-[#00B4D8]/20 px-3 py-1 rounded-full font-bold">
                   {book.discipline}
                 </span>
 
-                <h1 className="text-3xl sm:text-4xl font-extrabold text-white mt-6 leading-tight">
+                <h1 className="text-3xl sm:text-4xl font-extrabold text-[#03045E] mt-6 leading-tight">
                   {book.title}
                 </h1>
 
-                <p className="text-slate-400 mt-2 text-sm">
-                  by <span className="text-slate-200 font-semibold">{book.authorNames.join(", ")}</span>
+                <p className="text-[#0077B6] mt-2 text-sm">
+                  by <span className="text-[#03045E] font-semibold">{book.authorNames.join(", ")}</span>
                 </p>
 
-                <div className="flex flex-wrap gap-x-8 gap-y-2 mt-4 text-xs text-slate-400 border-y border-slate-900 py-3.5 my-6">
+                <div className="flex flex-wrap gap-x-8 gap-y-2 mt-4 text-xs text-[#0077B6] border-y border-[#00B4D8]/20 py-3.5 my-6">
                   <div>
-                    Pages: <span className="text-slate-200 font-semibold">{book.pageCount} pages</span>
+                    Pages: <span className="text-[#03045E] font-semibold">{book.pageCount} pages</span>
                   </div>
                   <div>
-                    Published: <span className="text-slate-200 font-semibold">{book.publishedAt}</span>
+                    Published: <span className="text-[#03045E] font-semibold">{book.publishedAt}</span>
                   </div>
                   <div>
-                    Platform: <span className="text-slate-200 font-semibold">Web & Offline PDF</span>
+                    Platform: <span className="text-[#03045E] font-semibold">Web & Offline PDF</span>
                   </div>
                 </div>
 
-                <div className="text-slate-300 leading-relaxed text-sm md:text-base">
+                <div className="text-[#03045E]/90 leading-relaxed text-sm md:text-base">
                   <p>{book.description}</p>
                 </div>
               </div>
 
               {/* Action Buttons */}
-              <div className="mt-8 pt-8 border-t border-slate-900 flex flex-col sm:flex-row items-center gap-4">
+              <div className="mt-8 pt-8 border-t border-[#00B4D8]/20 flex flex-col sm:flex-row items-center gap-4">
                 <div className="text-left w-full sm:w-auto">
-                  <span className="text-xs text-slate-500 uppercase block tracking-wider font-semibold">PRICE</span>
-                  <span className="text-2xl font-black text-indigo-400">{formattedPrice}</span>
+                  <span className="text-xs text-[#0077B6] uppercase block tracking-wider font-semibold">PRICE</span>
+                  <span className="text-2xl font-black text-[#0077B6]">{formattedPrice}</span>
                 </div>
                 
-                <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto sm:ml-auto">
-                  <Link
-                    href={`/reader/${book.id}`}
-                    className="w-full sm:w-auto bg-slate-800 hover:bg-slate-700 text-slate-200 px-6 py-3 rounded-xl text-center font-medium border border-slate-750 transition-all duration-300"
-                  >
-                    Read Preview Pages
-                  </Link>
-                  <button
-                    onClick={() => alert(`Initiating payment token retrieval for: ${book.title}. Checkout popup loaded via Midtrans Snap!`)}
-                    className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-500 text-white px-8 py-3 rounded-xl font-medium shadow-lg shadow-indigo-600/20 hover:shadow-indigo-600/30 transition-all hover:scale-102"
-                  >
-                    Buy Textbook
-                  </button>
-                </div>
+                <BookDetailActions title={book.title} bookId={book.id} />
               </div>
             </div>
           </div>

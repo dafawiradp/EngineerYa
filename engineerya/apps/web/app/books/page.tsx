@@ -105,15 +105,15 @@ export default function CatalogPage() {
   });
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen bg-[#90E0EF]">
       <Navbar />
 
-      <main className="flex-grow py-12 bg-[#0B0F19]">
+      <main className="flex-grow py-12 bg-[#90E0EF]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center md:text-left md:flex md:items-center md:justify-between mb-12">
             <div>
-              <h1 className="text-3xl font-extrabold text-white">Library Catalog</h1>
-              <p className="text-slate-400 mt-2">Discover state of the art textbooks and learn modern engineering.</p>
+              <h1 className="text-3xl font-extrabold text-[#03045E]">Library Catalog</h1>
+              <p className="text-[#0077B6] mt-2">Discover state of the art textbooks and learn modern engineering.</p>
             </div>
             
             {/* Search Input */}
@@ -123,22 +123,22 @@ export default function CatalogPage() {
                 placeholder="Search publications..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full bg-[#0F1424] border border-slate-800 focus:border-indigo-500 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none transition-colors"
+                className="w-full bg-[#F8FDFF] border border-[#00B4D8]/30 focus:border-[#0077B6] rounded-xl px-4 py-2.5 text-sm text-[#03045E] focus:outline-none transition-colors"
               />
-              <span className="absolute right-3.5 top-3 text-slate-500">🔍</span>
+              <span className="absolute right-3.5 top-3 text-[#0077B6]">🔍</span>
             </div>
           </div>
 
           {/* Discipline Filters */}
-          <div className="flex flex-wrap gap-2 mb-8 border-b border-slate-900 pb-6">
+          <div className="flex flex-wrap gap-2 mb-8 border-b border-[#00B4D8]/20 pb-6">
             {DISCIPLINES.map((discipline) => (
               <button
                 key={discipline}
                 onClick={() => setSelectedDiscipline(discipline)}
                 className={`text-xs font-semibold px-4 py-2 rounded-full border transition-all ${
                   selectedDiscipline === discipline
-                    ? "bg-indigo-600 text-white border-indigo-500"
-                    : "bg-[#0F1424] text-slate-400 border-slate-800/80 hover:text-white hover:border-slate-700"
+                    ? "bg-[#0077B6] text-white border-[#0077B6]"
+                    : "bg-[#F8FDFF] text-[#03045E] border-[#00B4D8]/20 hover:text-[#0077B6] hover:border-[#00B4D8]"
                 }`}
               >
                 {discipline}
@@ -154,10 +154,10 @@ export default function CatalogPage() {
               ))}
             </div>
           ) : (
-            <div className="text-center py-20 bg-[#0F1424]/40 rounded-2xl border border-slate-850">
+            <div className="text-center py-20 bg-[#F8FDFF]/70 rounded-2xl border border-[#00B4D8]/20">
               <span className="text-5xl">📚</span>
-              <h3 className="text-lg font-bold text-white mt-4">No books found</h3>
-              <p className="text-slate-400 text-sm mt-2">Try adjusting your filters or search keywords.</p>
+              <h3 className="text-lg font-bold text-[#03045E] mt-4">No books found</h3>
+              <p className="text-[#0077B6] text-sm mt-2">Try adjusting your filters or search keywords.</p>
             </div>
           )}
         </div>

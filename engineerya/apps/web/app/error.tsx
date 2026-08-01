@@ -26,7 +26,7 @@ export default function ErrorPage({ error, reset }: ErrorProps) {
       <div className="flex flex-col sm:flex-row items-center gap-4">
         <button
           onClick={reset}
-          className="w-full sm:w-auto bg-indigo-650 hover:bg-indigo-500 text-white px-6 py-2.5 rounded-xl font-medium transition-all"
+          className="w-full sm:w-auto bg-[#0077B6] hover:bg-[#00B4D8] text-white px-6 py-2.5 rounded-xl font-medium transition-all"
         >
           Try Again
         </button>

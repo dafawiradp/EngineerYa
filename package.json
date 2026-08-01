@@ -1,0 +1,18 @@
+{
+  "name": "engineerya-root",
+  "private": true,
+  "scripts": {
+    "dev": "npm run dev:web",
+    "dev:web": "npm --prefix engineerya run dev:web",
+    "dev:api": "npm --prefix engineerya run dev:api",
+    "build": "npm --prefix engineerya run build",
+    "start": "npm --prefix engineerya run start",
+    "lint": "npm --prefix engineerya run lint",
+    "typecheck": "npm --prefix engineerya run typecheck",
+    "db:generate": "npm --prefix engineerya run db:generate",
+    "db:migrate": "npm --prefix engineerya run db:migrate"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
