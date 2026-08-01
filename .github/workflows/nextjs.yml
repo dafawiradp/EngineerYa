@@ -1,102 +1,97 @@
-# Sample workflow for building and deploying a Next.js site to GitHub Pages
-#
-# To get started with Next.js see: https://nextjs.org/docs/getting-started
-#
 name: Deploy Next.js site to Pages
 
 on:
-  # Runs on pushes targeting the default branch
   push:
-    branches: ["main"]
-
-  # Allows you to run this workflow manually from the Actions tab
+    branches:
+      - main
   workflow_dispatch:
 
-# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
 permissions:
   contents: read
   pages: write
   id-token: write
 
-# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
-# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
 concurrency:
-  group: "pages"
+  group: pages
   cancel-in-progress: false
 
+env:
+  NODE_VERSION: "20"
+  PROJECT_DIRECTORY: engineerya
+
 jobs:
-  # Build job
   build:
     runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: engineerya
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
       - name: Detect package manager
-        id: detect-package-manager
+        id: package-manager
+        shell: bash
         run: |
-          # Prefer yarn.lock, then package-lock.json. If only package.json exists, fall back to `npm install` (no cache).
-          if [ -f "${{ github.workspace }}/yarn.lock" ]; then
-            echo "manager=yarn" >> $GITHUB_OUTPUT
-            echo "command=install" >> $GITHUB_OUTPUT
-            echo "runner=yarn" >> $GITHUB_OUTPUT
-            echo "cache=yarn" >> $GITHUB_OUTPUT
-            exit 0
-          elif [ -f "${{ github.workspace }}/package-lock.json" ]; then
-            echo "manager=npm" >> $GITHUB_OUTPUT
-            echo "command=ci" >> $GITHUB_OUTPUT
-            echo "runner=npx --no-install" >> $GITHUB_OUTPUT
-            echo "cache=npm" >> $GITHUB_OUTPUT
-            exit 0
-          elif [ -f "${{ github.workspace }}/package.json" ]; then
-            # package.json present but no lockfile: do not enable actions/setup-node cache (requires a lockfile)
-            echo "manager=npm" >> $GITHUB_OUTPUT
-            echo "command=install" >> $GITHUB_OUTPUT
-            echo "runner=npx --no-install" >> $GITHUB_OUTPUT
-            echo "cache=" >> $GITHUB_OUTPUT
-            exit 0
+          if [ -f "package-lock.json" ]; then
+            echo "manager=npm" >> "$GITHUB_OUTPUT"
+            echo "install_command=ci" >> "$GITHUB_OUTPUT"
+            echo "cache=npm" >> "$GITHUB_OUTPUT"
+            echo "lockfile=engineerya/package-lock.json" >> "$GITHUB_OUTPUT"
+          elif [ -f "yarn.lock" ]; then
+            echo "manager=yarn" >> "$GITHUB_OUTPUT"
+            echo "install_command=install --frozen-lockfile" >> "$GITHUB_OUTPUT"
+            echo "cache=yarn" >> "$GITHUB_OUTPUT"
+            echo "lockfile=engineerya/yarn.lock" >> "$GITHUB_OUTPUT"
+          elif [ -f "package.json" ]; then
+            echo "manager=npm" >> "$GITHUB_OUTPUT"
+            echo "install_command=install" >> "$GITHUB_OUTPUT"
+            echo "cache=" >> "$GITHUB_OUTPUT"
+            echo "lockfile=" >> "$GITHUB_OUTPUT"
           else
-            echo "Unable to determine package manager"
+            echo "No package.json or lockfile found."
             exit 1
           fi
-      - name: Setup Node
+
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
-          cache: ${{ steps.detect-package-manager.outputs.cache }}
-      - name: Setup Pages
+          node-version: ${{ env.NODE_VERSION }}
+          cache: ${{ steps.package-manager.outputs.cache }}
+          cache-dependency-path: ${{ steps.package-manager.outputs.lockfile }}
+
+      - name: Setup GitHub Pages
         uses: actions/configure-pages@v5
-        with:
-          # Automatically inject basePath in your Next.js configuration file and disable
-          # server side image optimization (https://nextjs.org/docs/api-reference/next/image#unoptimized).
-          #
-          # You may remove this line if you want to manage the configuration yourself.
-          static_site_generator: next
-      - name: Restore cache
+
+      - name: Restore Next.js cache
         uses: actions/cache@v4
         with:
-          path: |
-            .next/cache
-          # Generate a new cache whenever packages or source files change.
-          key: ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json', '**/yarn.lock') }}-${{ hashFiles('**.[jt]s', '**.[jt]sx') }}
-          # If source files changed but packages didn't, rebuild from a prior cache.
+          path: engineerya/apps/web/.next/cache
+          key: ${{ runner.os }}-nextjs-${{ hashFiles('engineerya/package-lock.json', 'engineerya/yarn.lock') }}-${{ hashFiles('engineerya/apps/web/**/*', 'engineerya/packages/**/*') }}
           restore-keys: |
-            ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json', '**/yarn.lock') }}-
+            ${{ runner.os }}-nextjs-${{ hashFiles('engineerya/package-lock.json', 'engineerya/yarn.lock') }}-
+
       - name: Install dependencies
-        run: ${{ steps.detect-package-manager.outputs.manager }} ${{ steps.detect-package-manager.outputs.command }}
-      - name: Build with Next.js
-        run: ${{ steps.detect-package-manager.outputs.runner }} next build
-      - name: Upload artifact
+        run: ${{ steps.package-manager.outputs.manager }} ${{ steps.package-manager.outputs.install_command }}
+
+      - name: Build web application
+        run: npm run build --workspace=apps/web
+
+      - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./out
+          path: engineerya/apps/web/out
 
-  # Deployment job
   deploy:
+    runs-on: ubuntu-latest
+    needs: build
+
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    needs: build
+
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
