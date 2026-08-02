@@ -1,42 +1,71 @@
-import { promises as fs } from "fs";
-import path from "path";
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Navbar } from "../../components/Navbar";
 import { Footer } from "../../components/Footer";
 
-async function getPublicMaterials() {
-  const materialsDir = path.join(process.cwd(), "public", "materials");
+type MaterialItem = {
+  title: string;
+  description: string;
+  link: string;
+  type: string;
+  discipline: string;
+  size: string;
+};
 
-  try {
-    const entries = await fs.readdir(materialsDir, { withFileTypes: true });
-    const files = entries
-      .filter((entry) => entry.isFile())
-      .map((entry) => entry.name)
-      .filter((name) => !name.startsWith("."))
-      .sort();
+const fallbackMaterials: MaterialItem[] = [
+  {
+    title: "Engineering Study Guide",
+    description: "A public starter guide for learners and visitors.",
+    link: "/materials/engineering-study-guide.pdf",
+    type: "PDF",
+    discipline: "Chemical Engineering",
+    size: "Public file",
+  },
+  {
+    title: "Public Repository",
+    description: "Open the full project repository for code and documentation.",
+    link: "https://github.com/dafawiradp/EngineerYa",
+    type: "Repository",
+    discipline: "General",
+    size: "Open source",
+  },
+];
 
-    return files.map((fileName) => {
-      const ext = path.extname(fileName).toLowerCase();
-      const baseName = path.basename(fileName, ext).replace(/[-_]+/g, " ");
-      const type = ext === ".pdf" ? "PDF" : ext === ".epub" ? "EPUB" : ext === ".md" ? "Markdown" : ext === ".txt" ? "Text" : "File";
-      const discipline = /chemical|chem/i.test(fileName) ? "Chemical Engineering" : "General";
+export default function MaterialsPage() {
+  const [materials, setMaterials] = useState<MaterialItem[]>(fallbackMaterials);
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState("All");
 
-      return {
-        title: baseName.replace(/\b\w/g, (char) => char.toUpperCase()),
-        description: `Public learning file available for free reading and download.`,
-        link: `/materials/${encodeURIComponent(fileName)}`,
-        type,
-        discipline,
-        size: "Public file",
-      };
+  useEffect(() => {
+    const loadMaterials = async () => {
+      try {
+        const response = await fetch("/materials/index.json");
+        if (!response.ok) return;
+        const data = await response.json();
+        if (Array.isArray(data) && data.length > 0) {
+          setMaterials(data);
+        }
+      } catch {
+        setMaterials(fallbackMaterials);
+      }
+    };
+
+    loadMaterials();
+  }, []);
+
+  const filteredMaterials = useMemo(() => {
+    const query = search.toLowerCase();
+    return materials.filter((item) => {
+      const matchesSearch =
+        item.title.toLowerCase().includes(query) ||
+        item.description.toLowerCase().includes(query) ||
+        item.discipline.toLowerCase().includes(query);
+      const matchesFilter = filter === "All" || item.discipline === filter;
+      return matchesSearch && matchesFilter;
     });
-  } catch {
-    return [];
-  }
-}
-
-export default async function MaterialsPage() {
-  const materials = await getPublicMaterials();
+  }, [materials, search, filter]);
 
   return (
     <div className="flex flex-col min-h-screen bg-[#90E0EF]">
@@ -51,21 +80,38 @@ export default async function MaterialsPage() {
             </p>
           </div>
 
-          <div className="mb-8 flex flex-wrap gap-3">
-            {['All', 'Chemical Engineering', 'General'].map((filter) => (
-              <span key={filter} className="rounded-full border border-[#00B4D8]/20 bg-[#F8FDFF] px-4 py-2 text-sm font-semibold text-[#0077B6]">
-                {filter}
-              </span>
-            ))}
+          <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <input
+              type="text"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Search materials, discipline, or topic"
+              className="w-full md:max-w-md rounded-xl border border-[#00B4D8]/20 bg-[#F8FDFF] px-4 py-3 text-sm text-[#03045E] outline-none"
+            />
+            <div className="flex flex-wrap gap-3">
+              {['All', 'Chemical Engineering', 'General'].map((option) => (
+                <button
+                  key={option}
+                  onClick={() => setFilter(option)}
+                  className={`rounded-full border px-4 py-2 text-sm font-semibold transition-all ${
+                    filter === option
+                      ? "border-[#0077B6] bg-[#0077B6] text-white"
+                      : "border-[#00B4D8]/20 bg-[#F8FDFF] text-[#0077B6]"
+                  }`}
+                >
+                  {option}
+                </button>
+              ))}
+            </div>
           </div>
 
-          {materials.length === 0 ? (
+          {filteredMaterials.length === 0 ? (
             <div className="rounded-2xl border border-[#00B4D8]/20 bg-[#F8FDFF] p-8 text-center text-[#0077B6]">
-              No public materials have been uploaded yet. Add files to the public/materials folder and they will appear here automatically.
+              No matching public materials were found. Try another keyword or filter.
             </div>
           ) : (
             <div className="grid gap-6 md:grid-cols-3">
-              {materials.map((item) => (
+              {filteredMaterials.map((item) => (
                 <div key={item.title} className="rounded-2xl border border-[#00B4D8]/20 bg-[#F8FDFF] p-6 shadow-lg shadow-[#00B4D8]/10">
                   <div className="flex items-center justify-between">
                     <div className="text-xs uppercase tracking-[0.25em] text-[#0077B6] font-semibold">{item.type}</div>
