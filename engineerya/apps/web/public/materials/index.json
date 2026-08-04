@@ -1,18 +1,16 @@
 [
   {
+    "id": "engineering-study-guide",
     "title": "Engineering Study Guide",
-    "description": "A public starter guide for learners and visitors to explore key concepts in engineering.",
-    "link": "/materials/engineering-study-guide.pdf",
-    "type": "PDF",
-    "discipline": "Chemical Engineering",
-    "size": "Public file"
-  },
-  {
-    "title": "Public Repository",
-    "description": "Open the full project repository for code, documentation, and updates.",
-    "link": "https://github.com/dafawiradp/EngineerYa",
-    "type": "Repository",
-    "discipline": "General",
-    "size": "Open source"
+    "description": "Panduan belajar teknik untuk pemula. Mencakup konsep dasar matematika rekayasa, fisika terapan, dan pengenalan berbagai disiplin teknik.",
+    "category": "General",
+    "author": "EngineerYa Team",
+    "thumbnail": "",
+    "file": "/materials/engineering-study-guide.pdf",
+    "fileType": "pdf",
+    "fileSizeBytes": 0,
+    "fileSizeDisplay": "—",
+    "date": "2026-08-01",
+    "tags": ["engineering", "mathematics", "physics", "beginner"]
   }
 ]
