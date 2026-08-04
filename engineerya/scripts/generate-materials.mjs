@@ -1,4 +1,4 @@
-/**
+/** 
  * generate-materials.mjs
  *
  * Auto-scan /apps/web/public/materials/ dan generate materials.json.
