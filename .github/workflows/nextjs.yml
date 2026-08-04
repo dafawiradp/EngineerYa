@@ -76,7 +76,13 @@ jobs:
       - name: Install dependencies
         run: ${{ steps.package-manager.outputs.manager }} ${{ steps.package-manager.outputs.install_command }}
 
+      - name: Generate materials metadata
+        run: node scripts/generate-materials.mjs
+
       - name: Build web application
+        env:
+          GITHUB_ACTIONS: true
+          GITHUB_REPOSITORY: ${{ github.repository }}
         run: npm run build --workspace=apps/web
 
       - name: Upload Pages artifact
