@@ -30,11 +30,14 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Generate materials metadata
+        run: node scripts/generate-materials.mjs
+
       - name: Build site
         env:
           GITHUB_ACTIONS: true
           GITHUB_REPOSITORY: ${{ github.repository }}
-        run: npm run build
+        run: npm run build --workspace=apps/web
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
