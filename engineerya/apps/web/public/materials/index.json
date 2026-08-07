@@ -1,16 +1,30 @@
 [
   {
-    "id": "engineering-study-guide",
-    "title": "Engineering Study Guide",
-    "description": "Panduan belajar teknik untuk pemula. Mencakup konsep dasar matematika rekayasa, fisika terapan, dan pengenalan berbagai disiplin teknik.",
-    "category": "General",
-    "author": "EngineerYa Team",
+    "id": "perrys-handbook-lengkap-compressed",
+    "title": "Perry's Chemical Engineers' Handbook (Lengkap)",
+    "description": "Referensi komprehensif untuk insinyur kimia. Mencakup operasi unit, termodinamika, transfer massa dan panas, kinetika reaksi, dan banyak lagi.",
+    "category": "Teknik Kimia",
+    "author": "Don W. Green, Robert H. Perry",
     "thumbnail": "",
-    "file": "/materials/engineering-study-guide.pdf",
+    "file": "/materials/perrys-handbook-LENGKAP_compressed.pdf",
     "fileType": "pdf",
-    "fileSizeBytes": 0,
-    "fileSizeDisplay": "—",
-    "date": "2026-08-01",
-    "tags": ["engineering", "mathematics", "physics", "beginner"]
+    "fileSizeBytes": 25853587,
+    "fileSizeDisplay": "24.7 MB",
+    "date": "2026-01-01",
+    "tags": ["chemical engineering", "handbook", "perry", "teknik kimia", "referensi"]
+  },
+  {
+    "id": "cane-sugar-handbook-12ed",
+    "title": "Cane Sugar Handbook (12th Edition)",
+    "description": "Panduan lengkap industri gula tebu edisi ke-12. Meliputi proses produksi, pemurnian, kristalisasi, dan kontrol kualitas gula.",
+    "category": "Teknik Kimia",
+    "author": "Chen & Chou",
+    "thumbnail": "",
+    "file": "/materials/cane-sugar-handook-12ed-chen-chou-pdf-free.pdf",
+    "fileType": "pdf",
+    "fileSizeBytes": 4221038,
+    "fileSizeDisplay": "4.0 MB",
+    "date": "2026-01-01",
+    "tags": ["sugar", "chemical engineering", "handbook", "industri gula", "teknik kimia"]
   }
 ]

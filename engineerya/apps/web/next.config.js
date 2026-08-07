@@ -22,7 +22,7 @@ const nextConfig = {
 
   ...(basePath && {
     basePath,
-    assetPrefix: `${basePath}/`,
+    assetPrefix: basePath,
   }),
 };
 

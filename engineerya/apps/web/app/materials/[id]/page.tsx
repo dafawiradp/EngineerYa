@@ -1,11 +1,15 @@
 import { MaterialReaderClient } from "./MaterialReaderClient";
-import materialsJson from "../../../public/materials/materials.json";
-import indexJson from "../../../public/materials/index.json";
 
 // Untuk static export GitHub Pages: generate halaman dari materials.json / index.json
-export function generateStaticParams() {
+// Menggunakan dynamic import dengan type assertion untuk menghindari issues saat JSON kosong
+export async function generateStaticParams() {
+  const [materialsJson, indexJson] = await Promise.all([
+    import("../../../public/materials/materials.json").then((m) => m.default as { id: string }[]),
+    import("../../../public/materials/index.json").then((m) => m.default as { id: string }[]),
+  ]);
+
   // Gabungkan keduanya, hilangkan duplikat
-  const allMaterials = [...(materialsJson as { id: string }[]), ...(indexJson as { id: string }[])];
+  const allMaterials = [...(Array.isArray(materialsJson) ? materialsJson : []), ...(Array.isArray(indexJson) ? indexJson : [])];
   const seen = new Set<string>();
   const unique = allMaterials.filter((m) => {
     if (!m.id || seen.has(m.id)) return false;

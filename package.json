@@ -1,31 +1,14 @@
 {
-  "name": "engineerya",
+  "name": "engineerya-root",
   "private": true,
-  "version": "0.1.0",
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
+  "description": "Root package — semua source ada di subfolder engineerya/. Jalankan perintah dari sana.",
   "scripts": {
-    "dev": "npm run dev:web",
-    "dev:web": "npm run dev --workspace=apps/web",
-    "dev:api": "npm run start:dev --workspace=apps/api",
-    "generate:materials": "node scripts/generate-materials.mjs",
-    "prebuild": "node scripts/generate-materials.mjs",
-    "build": "npm run build --workspaces --if-present",
-    "start": "npm run start --workspace=apps/web",
-    "lint": "npm run lint --workspaces --if-present",
-    "lint:fix": "npm run lint:fix --workspaces --if-present",
-    "typecheck": "npm run typecheck --workspaces --if-present",
-    "format": "prettier --write \"**/*.{ts,tsx,js,json,css,md}\" --ignore-path .gitignore",
-    "test": "npm run test --workspaces --if-present",
-    "clean": "npx rimraf apps/web/.next apps/web/out apps/api/dist packages/database/dist",
-    "db:generate": "npm run generate --workspace=packages/database",
-    "db:migrate": "npm run migrate:dev --workspace=packages/database"
-  },
-  "devDependencies": {
-    "typescript": "^5.5.4",
-    "prettier": "^3.3.3"
+    "install:all": "npm install --prefix engineerya",
+    "dev": "npm run dev --prefix engineerya",
+    "build": "npm run build --prefix engineerya",
+    "lint": "npm run lint --prefix engineerya",
+    "typecheck": "npm run typecheck --prefix engineerya",
+    "test": "npm run test --prefix engineerya"
   },
   "engines": {
     "node": ">=20.0.0"

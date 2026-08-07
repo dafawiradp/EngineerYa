@@ -17,7 +17,6 @@ concurrency:
 
 env:
   NODE_VERSION: "20"
-  PROJECT_DIRECTORY: engineerya
 
 jobs:
   build:
@@ -31,36 +30,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Detect package manager
-        id: package-manager
-        shell: bash
-        run: |
-          if [ -f "package-lock.json" ]; then
-            echo "manager=npm" >> "$GITHUB_OUTPUT"
-            echo "install_command=ci" >> "$GITHUB_OUTPUT"
-            echo "cache=npm" >> "$GITHUB_OUTPUT"
-            echo "lockfile=engineerya/package-lock.json" >> "$GITHUB_OUTPUT"
-          elif [ -f "yarn.lock" ]; then
-            echo "manager=yarn" >> "$GITHUB_OUTPUT"
-            echo "install_command=install --frozen-lockfile" >> "$GITHUB_OUTPUT"
-            echo "cache=yarn" >> "$GITHUB_OUTPUT"
-            echo "lockfile=engineerya/yarn.lock" >> "$GITHUB_OUTPUT"
-          elif [ -f "package.json" ]; then
-            echo "manager=npm" >> "$GITHUB_OUTPUT"
-            echo "install_command=install" >> "$GITHUB_OUTPUT"
-            echo "cache=" >> "$GITHUB_OUTPUT"
-            echo "lockfile=" >> "$GITHUB_OUTPUT"
-          else
-            echo "No package.json or lockfile found."
-            exit 1
-          fi
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: ${{ steps.package-manager.outputs.cache }}
-          cache-dependency-path: ${{ steps.package-manager.outputs.lockfile }}
+          cache: "npm"
+          cache-dependency-path: engineerya/package-lock.json
 
       - name: Setup GitHub Pages
         uses: actions/configure-pages@v5
@@ -69,19 +44,19 @@ jobs:
         uses: actions/cache@v4
         with:
           path: engineerya/apps/web/.next/cache
-          key: ${{ runner.os }}-nextjs-${{ hashFiles('engineerya/package-lock.json', 'engineerya/yarn.lock') }}-${{ hashFiles('engineerya/apps/web/**/*', 'engineerya/packages/**/*') }}
+          key: ${{ runner.os }}-nextjs-${{ hashFiles('engineerya/package-lock.json') }}-${{ hashFiles('engineerya/apps/web/**/*.ts', 'engineerya/apps/web/**/*.tsx', 'engineerya/packages/**/*.ts') }}
           restore-keys: |
-            ${{ runner.os }}-nextjs-${{ hashFiles('engineerya/package-lock.json', 'engineerya/yarn.lock') }}-
+            ${{ runner.os }}-nextjs-${{ hashFiles('engineerya/package-lock.json') }}-
 
       - name: Install dependencies
-        run: ${{ steps.package-manager.outputs.manager }} ${{ steps.package-manager.outputs.install_command }}
+        run: npm ci
 
       - name: Generate materials metadata
         run: node scripts/generate-materials.mjs
 
       - name: Build web application
         env:
-          GITHUB_ACTIONS: true
+          GITHUB_ACTIONS: "true"
           GITHUB_REPOSITORY: ${{ github.repository }}
         run: npm run build --workspace=apps/web
 
