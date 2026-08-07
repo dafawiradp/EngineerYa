@@ -6,10 +6,12 @@
     "apps/*",
     "packages/*"
   ],
-  "scripts": {
+   "scripts": {
     "dev": "npm run dev:web",
     "dev:web": "npm run dev --workspace=apps/web",
     "dev:api": "npm run start:dev --workspace=apps/api",
+    "generate:materials": "node scripts/generate-materials.mjs",
+    "prebuild": "node scripts/generate-materials.mjs",
     "build": "npm run build --workspaces --if-present",
     "start": "npm run start --workspace=apps/web",
     "lint": "npm run lint --workspaces --if-present",
