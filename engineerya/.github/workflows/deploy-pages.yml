@@ -1,8 +1,9 @@
-name: Deploy to GitHub Pages
+name: Deploy Next.js site to Pages
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
@@ -11,33 +12,74 @@ permissions:
   id-token: write
 
 concurrency:
-  group: "pages"
-  cancel-in-progress: true
+  group: pages
+  cancel-in-progress: false
+
+env:
+  NODE_VERSION: "20"
+  PROJECT_DIRECTORY: engineerya
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     defaults:
       run:
-        working-directory: .
+        working-directory: engineerya
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Detect package manager
+        id: package-manager
+        shell: bash
+        run: |
+          if [ -f "package-lock.json" ]; then
+            echo "manager=npm" >> "$GITHUB_OUTPUT"
+            echo "install_command=ci" >> "$GITHUB_OUTPUT"
+            echo "cache=npm" >> "$GITHUB_OUTPUT"
+            echo "lockfile=engineerya/package-lock.json" >> "$GITHUB_OUTPUT"
+          elif [ -f "yarn.lock" ]; then
+            echo "manager=yarn" >> "$GITHUB_OUTPUT"
+            echo "install_command=install --frozen-lockfile" >> "$GITHUB_OUTPUT"
+            echo "cache=yarn" >> "$GITHUB_OUTPUT"
+            echo "lockfile=engineerya/yarn.lock" >> "$GITHUB_OUTPUT"
+          elif [ -f "package.json" ]; then
+            echo "manager=npm" >> "$GITHUB_OUTPUT"
+            echo "install_command=install" >> "$GITHUB_OUTPUT"
+            echo "cache=" >> "$GITHUB_OUTPUT"
+            echo "lockfile=" >> "$GITHUB_OUTPUT"
+          else
+            echo "No package.json or lockfile found."
+            exit 1
+          fi
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
-          cache: npm
+          node-version: ${{ env.NODE_VERSION }}
+          cache: ${{ steps.package-manager.outputs.cache }}
+          cache-dependency-path: ${{ steps.package-manager.outputs.lockfile }}
+
+      - name: Setup GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Restore Next.js cache
+        uses: actions/cache@v4
+        with:
+          path: engineerya/apps/web/.next/cache
+          key: ${{ runner.os }}-nextjs-${{ hashFiles('engineerya/package-lock.json', 'engineerya/yarn.lock') }}-${{ hashFiles('engineerya/apps/web/**/*', 'engineerya/packages/**/*') }}
+          restore-keys: |
+            ${{ runner.os }}-nextjs-${{ hashFiles('engineerya/package-lock.json', 'engineerya/yarn.lock') }}-
 
       - name: Install dependencies
-        run: npm install
+        run: ${{ steps.package-manager.outputs.manager }} ${{ steps.package-manager.outputs.install_command }}
 
       - name: Generate materials metadata
         run: node scripts/generate-materials.mjs
 
-      - name: Build site
+      - name: Build web application
         env:
           GITHUB_ACTIONS: true
           GITHUB_REPOSITORY: ${{ github.repository }}
@@ -46,15 +88,17 @@ jobs:
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: apps/web/out
+          path: engineerya/apps/web/out
 
   deploy:
-    needs: build
     runs-on: ubuntu-latest
+    needs: build
+
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
+
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
