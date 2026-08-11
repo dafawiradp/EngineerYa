@@ -44,6 +44,15 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-nextjs-${{ hashFiles('engineerya/package-lock.json') }}-
 
+      # TEMPORARY DIAGNOSTIC STEP — remove once Node 24 / lockfile path is confirmed in Actions logs
+      - name: Diagnostics (temporary)
+        run: |
+          echo "node: $(node --version)"
+          echo "npm: $(npm --version)"
+          echo "pwd: $(pwd)"
+          find . -maxdepth 2 -name package-lock.json
+          ls -la
+
       - name: Install dependencies
         run: npm ci
 
