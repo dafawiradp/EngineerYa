@@ -2,7 +2,7 @@
 
 <br />
 
-<img src="https://raw.githubusercontent.com/dafawiradp/EngineerYa/main/engineerya/apps/web/public/logo.svg" alt="EngineerYa Logo" width="72" height="72" />
+<img src="https://raw.githubusercontent.com/dafawiradp/EngineerYa/main/engineerya/apps/web/public/assets/LogoEngineerYa.png" alt="EngineerYa Logo" width="300" height="200" />
 
 <h1>EngineerYa</h1>
 
